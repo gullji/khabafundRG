@@ -86,6 +86,14 @@
     flex-wrap: wrap;
   }
 
+  .hero-top-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+
   .status {
     display: flex;
     align-items: center;
@@ -93,6 +101,21 @@
     font-size: 13px;
     color: #C9BEA9;
   }
+
+  .hero-links {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+  }
+
+  .hero-links a {
+    color: #C9BEA9;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 1px;
+  }
+  .hero-links a:hover { color: var(--gold); border-bottom-color: var(--gold); }
 
   .status-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -210,6 +233,38 @@
   .balance-bar-fill.owes { background: var(--chili); }
   .balance-bar-fill.owed { background: var(--basil); }
 
+  /* ---------- Who should pay ---------- */
+
+  .payer-callout {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+    background: var(--cream);
+    padding: 16px 20px;
+    margin-top: 20px;
+  }
+
+  .payer-callout-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 6px;
+  }
+
+  .payer-callout-names {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .payer-callout-names .sep {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 8px;
+    vertical-align: middle;
+  }
+
   /* ---------- Stats strip ---------- */
 
   .stats-strip {
@@ -259,6 +314,17 @@
   }
 
   #resultCount { font-size: 13px; color: var(--ink-soft); }
+
+  .feed-month {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    margin: 28px 0 2px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .feed-month:first-child { margin-top: 0; }
 
   .feed-item {
     border-top: 1px dashed var(--line);
@@ -326,19 +392,6 @@
   .feed-detail .neg { color: var(--basil); }
   .feed-detail .pos { color: var(--chili); }
 
-  #loadMore {
-    display: block;
-    margin: 24px auto 0;
-    background: var(--ink);
-    color: var(--cream);
-    border: none;
-    padding: 10px 22px;
-    border-radius: var(--radius);
-    font-size: 14px;
-    cursor: pointer;
-  }
-  #loadMore:hover { background: #40342A; }
-
   .empty {
     color: var(--ink-soft);
     font-size: 14px;
@@ -400,14 +453,20 @@
 <div class="hero">
   <div class="hero-inner">
     <div class="hero-top">
-      <div class="status">
-        <span class="status-dot loading" id="statusDot"></span>
-        <span id="statusText">Pulling the latest tab</span>
+      <div class="hero-top-left">
+        <div class="status">
+          <span class="status-dot loading" id="statusDot"></span>
+          <span id="statusText">Pulling the latest tab</span>
+        </div>
+        <nav class="hero-links">
+          <a id="sourceLink" href="#" target="_blank" rel="noopener">Source</a>
+          <a id="entryFormLink" href="https://forms.gle/FZ2RZctuS1iXpNBj9" target="_blank" rel="noopener">Entry Form</a>
+        </nav>
       </div>
       <button id="refreshBtn" disabled>Refresh</button>
     </div>
     <h1>Khaba Fund</h1>
-    <p class="hero-sub">The running dinner tab for eight friends in Riyadh. <strong id="sinceLine"></strong></p>
+    <p class="hero-sub">Running meals tab Desi Group <strong id="sinceLine"></strong></p>
   </div>
 </div>
 
@@ -418,6 +477,10 @@
     <p class="section-note" id="balanceNote">Balances update as soon as the sheet does.</p>
     <div class="balance-grid" id="balanceGrid">
       <div class="placeholder">Loading balances…</div>
+    </div>
+    <div class="payer-callout" id="payerCallout" style="display:none">
+      <p class="payer-callout-label">Who should pay today</p>
+      <p class="payer-callout-names" id="payerCalloutNames"></p>
     </div>
     <div class="stats-strip" id="statsStrip"></div>
   </section>
@@ -434,7 +497,6 @@
       </div>
     </div>
     <div id="feedList"><div class="placeholder">Loading the tab…</div></div>
-    <button id="loadMore" style="display:none">Show more</button>
   </section>
 
 </div>
@@ -458,14 +520,14 @@
   ];
   var EXCLUDE = { "": 1, "date": 1, "day": 1, "particulars": 1, "blank": 1, "control": 1 };
   var AUTO_REFRESH_MS = 5 * 60 * 1000;
-  var PAGE_SIZE = 25;
 
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  document.getElementById("sheetLink").href =
-    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit?usp=sharing";
+  var sheetUrl = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit?usp=sharing";
+  document.getElementById("sheetLink").href = sheetUrl;
+  document.getElementById("sourceLink").href = sheetUrl;
 
-  var state = { transactions: [], filtered: [], shown: 0, people: [] };
+  var state = { transactions: [], filtered: [], people: [] };
 
   function parseAmt(v) {
     if (v == null) return 0;
@@ -504,6 +566,14 @@
   function fmtDateShort(d) {
     if (!d) return "";
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+
+  function monthKey(d) {
+    return d.getFullYear() * 100 + d.getMonth();
+  }
+
+  function monthLabel(d) {
+    return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   }
 
   function relTime(ts) {
@@ -657,6 +727,28 @@
     }
   }
 
+  function renderWhoShouldPay(data) {
+    var box = document.getElementById("payerCallout");
+    var namesEl = document.getElementById("payerCalloutNames");
+    var owers = Object.keys(data.balances)
+      .filter(function (n) { return data.balances[n] > 0.5; })
+      .sort(function (a, b) { return data.balances[b] - data.balances[a]; });
+
+    if (owers.length === 0) {
+      box.style.display = "block";
+      namesEl.textContent = "Everyone's settled up";
+      return;
+    }
+
+    var top = owers.slice(0, 2);
+    if (top.length === 1) {
+      namesEl.textContent = top[0];
+    } else {
+      namesEl.innerHTML = escapeHtml(top[0]) + '<span class="sep">OR</span>' + escapeHtml(top[1]);
+    }
+    box.style.display = "block";
+  }
+
   function renderStats(data) {
     var strip = document.getElementById("statsStrip");
     var count = data.transactions.length;
@@ -680,27 +772,29 @@
     }).join("");
   }
 
-  function renderFeed(reset) {
+  function renderFeed() {
     var list = document.getElementById("feedList");
-    var loadMore = document.getElementById("loadMore");
-    if (reset) {
-      list.innerHTML = "";
-      state.shown = 0;
-    }
+    list.innerHTML = "";
+
     if (state.filtered.length === 0) {
       list.innerHTML = '<div class="empty">No outings match that search.</div>';
-      loadMore.style.display = "none";
       document.getElementById("resultCount").textContent = "";
       return;
     }
 
-    var next = state.filtered.slice(state.shown, state.shown + PAGE_SIZE);
-    next.forEach(function (t) {
+    var currentKey = null;
+    state.filtered.forEach(function (t) {
+      var key = monthKey(t.date);
+      if (key !== currentKey) {
+        currentKey = key;
+        var heading = document.createElement("h3");
+        heading.className = "feed-month";
+        heading.textContent = monthLabel(t.date);
+        list.appendChild(heading);
+      }
       list.appendChild(buildFeedItem(t));
     });
-    state.shown += next.length;
 
-    loadMore.style.display = state.shown < state.filtered.length ? "block" : "none";
     document.getElementById("resultCount").textContent = state.filtered.length + (state.filtered.length === 1 ? " outing" : " outings");
   }
 
@@ -749,7 +843,7 @@
     var q = document.getElementById("search").value.trim().toLowerCase();
     var all = state.transactions.slice().sort(function (a, b) { return b.date - a.date; });
     state.filtered = q ? all.filter(function (t) { return t.particulars.toLowerCase().indexOf(q) > -1; }) : all;
-    renderFeed(true);
+    renderFeed();
   }
 
   function escapeHtml(s) {
@@ -780,6 +874,7 @@
       state.transactions = data.transactions;
       state.people = data.people;
       renderBalances(data);
+      renderWhoShouldPay(data);
       renderStats(data);
       applySearch();
       var now = Date.now();
@@ -797,7 +892,6 @@
 
   document.getElementById("refreshBtn").addEventListener("click", load);
   document.getElementById("search").addEventListener("input", applySearch);
-  document.getElementById("loadMore").addEventListener("click", function () { renderFeed(false); });
 
   load();
   setInterval(load, AUTO_REFRESH_MS);
