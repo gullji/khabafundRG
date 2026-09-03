@@ -54,7 +54,9 @@
   /* ---------- Hero ---------- */
 
   .hero {
-    background: var(--ink);
+    background:
+      linear-gradient(180deg, rgba(24,18,12,0.80) 0%, rgba(24,18,12,0.90) 55%, rgba(24,18,12,0.97) 100%),
+      url('https://images.pexels.com/photos/34463118/pexels-photo-34463118.jpeg?auto=compress&cs=tinysrgb&w=1920') center 38%/cover no-repeat;
     color: var(--cream);
     padding: 56px 24px 72px;
     position: relative;
@@ -86,14 +88,6 @@
     flex-wrap: wrap;
   }
 
-  .hero-top-left {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    row-gap: 10px;
-  }
-
   .status {
     display: flex;
     align-items: center;
@@ -101,21 +95,6 @@
     font-size: 13px;
     color: #C9BEA9;
   }
-
-  .hero-links {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 13px;
-  }
-
-  .hero-links a {
-    color: #C9BEA9;
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    padding-bottom: 1px;
-  }
-  .hero-links a:hover { color: var(--gold); border-bottom-color: var(--gold); }
 
   .status-dot {
     width: 7px; height: 7px; border-radius: 50%;
@@ -144,9 +123,55 @@
     font-weight: 700;
     font-size: clamp(40px, 8vw, 64px);
     line-height: 0.98;
-    margin: 28px 0 10px;
+    margin: 0;
     letter-spacing: -0.01em;
   }
+
+  .hero-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 28px 0 10px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .btn-3d {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 22px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--sans);
+    text-decoration: none;
+    border-radius: 7px;
+    white-space: nowrap;
+    border: 1px solid rgba(0,0,0,0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .btn-3d.btn-gold {
+    color: #2B2118;
+    background: linear-gradient(180deg, #F3D888 0%, var(--gold) 100%);
+    box-shadow: 0 3px 0 #93701C, 0 7px 14px rgba(0,0,0,0.4);
+  }
+  .btn-3d.btn-gold:hover { transform: translateY(-2px); box-shadow: 0 5px 0 #93701C, 0 11px 18px rgba(0,0,0,0.45); }
+  .btn-3d.btn-gold:active { transform: translateY(2px); box-shadow: 0 1px 0 #93701C, 0 2px 6px rgba(0,0,0,0.35); }
+
+  .btn-3d.btn-cream {
+    color: #2B2118;
+    background: linear-gradient(180deg, #FFFDF9 0%, var(--cream) 100%);
+    box-shadow: 0 3px 0 #B9AC8E, 0 7px 14px rgba(0,0,0,0.35);
+  }
+  .btn-3d.btn-cream:hover { transform: translateY(-2px); box-shadow: 0 5px 0 #B9AC8E, 0 11px 18px rgba(0,0,0,0.4); }
+  .btn-3d.btn-cream:active { transform: translateY(2px); box-shadow: 0 1px 0 #B9AC8E, 0 2px 6px rgba(0,0,0,0.3); }
 
   .hero-sub {
     font-size: 16px;
@@ -445,6 +470,8 @@
     .wrap { padding: 36px 18px 60px; }
     .feed-date { width: 74px; font-size: 11px; }
     .feed-toggle, .feed-detail { padding-left: 84px; }
+    .btn-3d { padding: 9px 16px; font-size: 12px; }
+    .hero-actions { gap: 10px; }
   }
 </style>
 </head>
@@ -453,19 +480,19 @@
 <div class="hero">
   <div class="hero-inner">
     <div class="hero-top">
-      <div class="hero-top-left">
-        <div class="status">
-          <span class="status-dot loading" id="statusDot"></span>
-          <span id="statusText">Pulling the latest tab</span>
-        </div>
-        <nav class="hero-links">
-          <a id="sourceLink" href="#" target="_blank" rel="noopener">Source</a>
-          <a id="entryFormLink" href="https://forms.gle/FZ2RZctuS1iXpNBj9" target="_blank" rel="noopener">Entry Form</a>
-        </nav>
+      <div class="status">
+        <span class="status-dot loading" id="statusDot"></span>
+        <span id="statusText">Pulling the latest tab</span>
       </div>
       <button id="refreshBtn" disabled>Refresh</button>
     </div>
-    <h1>Khaba Fund</h1>
+    <div class="hero-title-row">
+      <h1>Khaba Fund</h1>
+      <div class="hero-actions">
+        <a id="sourceLink" class="btn-3d btn-cream" href="#" target="_blank" rel="noopener">Source</a>
+        <a id="entryFormLink" class="btn-3d btn-gold" href="https://forms.gle/FZ2RZctuS1iXpNBj9" target="_blank" rel="noopener">Entry Form</a>
+      </div>
+    </div>
     <p class="hero-sub">Running meals tab Desi Group <strong id="sinceLine"></strong></p>
   </div>
 </div>
