@@ -344,22 +344,60 @@
 
   #resultCount { font-size: 13px; color: var(--ink-soft); }
 
+  .feed-month-group {
+    border-bottom: 1px solid var(--line);
+  }
+
   .feed-month {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    background: none;
+    border: none;
+    margin: 0;
+    padding: 16px 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+  }
+
+  .feed-month-label {
     font-family: var(--serif);
     font-weight: 600;
     font-size: 16px;
     color: var(--ink);
-    margin: 28px 0 2px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--line);
   }
-  .feed-month:first-child { margin-top: 0; }
+  .feed-month:hover .feed-month-label { color: var(--chili); }
+
+  .feed-month-count {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-left: auto;
+  }
+
+  .feed-month-chevron {
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--ink-soft);
+    border-bottom: 2px solid var(--ink-soft);
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .feed-month.expanded .feed-month-chevron { transform: rotate(-135deg); }
+
+  .feed-month-body {
+    display: none;
+    padding-bottom: 8px;
+  }
+  .feed-month-body.open { display: block; }
 
   .feed-item {
     border-top: 1px dashed var(--line);
     padding: 14px 0;
   }
-  .feed-item:last-child { border-bottom: 1px dashed var(--line); }
 
   .feed-row {
     display: flex;
@@ -544,10 +582,10 @@
 
   var SHEET_ID = "1QuhUY_MPCssG154RNbVUsQxs-ZHO32_nmShNGFVk50E";
   var CANDIDATES = [
-    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv&gid=0",
-    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv",
     "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0",
-    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv"
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv",
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv&gid=0",
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv"
   ];
   var EXCLUDE = { "": 1, "date": 1, "day": 1, "particulars": 1, "blank": 1, "control": 1 };
   var AUTO_REFRESH_MS = 5 * 60 * 1000;
@@ -558,7 +596,7 @@
   document.getElementById("sheetLink").href = sheetUrl;
   document.getElementById("sourceLink").href = sheetUrl;
 
-  var state = { transactions: [], filtered: [], people: [] };
+  var state = { transactions: [], filtered: [], people: [], expandedMonths: {} };
 
   function parseAmt(v) {
     if (v == null) return 0;
@@ -813,17 +851,48 @@
       return;
     }
 
-    var currentKey = null;
+    var searching = document.getElementById("search").value.trim() !== "";
+
+    var groups = [];
+    var byKey = {};
     state.filtered.forEach(function (t) {
       var key = monthKey(t.date);
-      if (key !== currentKey) {
-        currentKey = key;
-        var heading = document.createElement("h3");
-        heading.className = "feed-month";
-        heading.textContent = monthLabel(t.date);
-        list.appendChild(heading);
+      if (!byKey[key]) {
+        byKey[key] = { key: key, label: monthLabel(t.date), items: [] };
+        groups.push(byKey[key]);
       }
-      list.appendChild(buildFeedItem(t));
+      byKey[key].items.push(t);
+    });
+
+    groups.forEach(function (g) {
+      var isOpen = searching || !!state.expandedMonths[g.key];
+
+      var section = document.createElement("div");
+      section.className = "feed-month-group";
+
+      var header = document.createElement("button");
+      header.type = "button";
+      header.className = "feed-month" + (isOpen ? " expanded" : "");
+      header.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      header.innerHTML =
+        '<span class="feed-month-label">' + escapeHtml(g.label) + '</span>' +
+        '<span class="feed-month-count">' + g.items.length + (g.items.length === 1 ? " outing" : " outings") + '</span>' +
+        '<span class="feed-month-chevron" aria-hidden="true"></span>';
+
+      var body = document.createElement("div");
+      body.className = "feed-month-body" + (isOpen ? " open" : "");
+      g.items.forEach(function (t) { body.appendChild(buildFeedItem(t)); });
+
+      header.addEventListener("click", function () {
+        var nowOpen = body.classList.toggle("open");
+        header.classList.toggle("expanded", nowOpen);
+        header.setAttribute("aria-expanded", nowOpen ? "true" : "false");
+        state.expandedMonths[g.key] = nowOpen;
+      });
+
+      section.appendChild(header);
+      section.appendChild(body);
+      list.appendChild(section);
     });
 
     document.getElementById("resultCount").textContent = state.filtered.length + (state.filtered.length === 1 ? " outing" : " outings");
