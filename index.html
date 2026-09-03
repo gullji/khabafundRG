@@ -211,7 +211,7 @@
 
   .balance-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 1px;
     background: var(--line);
     border: 1px solid var(--line);
@@ -281,7 +281,7 @@
   }
 
   .payer-callout-names {
-    font-family: var(--serif);
+    font-family: var(--sans);
     font-weight: 600;
     font-size: 22px;
     color: var(--maroon);
@@ -394,6 +394,12 @@
     font-weight: 600;
     font-size: 14px;
     color: var(--ink);
+  }
+
+  .feed-month-avg {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
   }
 
   .feed-month-count {
@@ -534,7 +540,7 @@
   @media (max-width: 520px) {
     .hero { padding: 40px 18px 60px; }
     .wrap { padding: 36px 18px 60px; }
-    .balance-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .balance-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
     .feed-date { width: 74px; font-size: 11px; }
     .feed-toggle, .feed-detail { padding-left: 84px; }
     .btn-3d { padding: 9px 16px; font-size: 12px; }
@@ -924,6 +930,7 @@
           '<span class="feed-month-label">' + escapeHtml(g.label) + '</span>' +
           '<span class="feed-month-meta">' +
             '<span class="feed-month-total tabular">' + fmtMoney(g.total) + '</span>' +
+            '<span class="feed-month-avg tabular">' + fmtMoney(g.total / g.items.length) + ' avg</span>' +
             '<span class="feed-month-count">' + g.items.length + (g.items.length === 1 ? " outing" : " outings") + '</span>' +
           '</span>' +
         '</span>' +
