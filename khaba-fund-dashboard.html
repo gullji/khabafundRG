@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khaba Fund | The Running Tab</title>
+<meta name="description" content="Live balances for the Khaba Fund dinner tab, pulled straight from the group's Google Sheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #2B2118;
+    --ink-soft: #5A4E40;
+    --paper: #FAF6EE;
+    --paper-dim: #F0E9D8;
+    --line: #DDD3BC;
+    --chili: #B8402A;
+    --chili-soft: #F4E1DB;
+    --basil: #4C6444;
+    --basil-soft: #E4EADF;
+    --gold: #D6A32B;
+    --cream: #F3ECDD;
+    --radius: 3px;
+    --serif: "Fraunces", Georgia, serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", "SF Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  .tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  button, input { font-family: inherit; }
+
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Hero ---------- */
+
+  .hero {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 56px 24px 72px;
+    position: relative;
+  }
+
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 14px;
+    background:
+      radial-gradient(circle at 10px 0, transparent 8px, var(--ink) 8.5px) top left,
+      radial-gradient(circle at 10px 0, transparent 8px, var(--ink) 8.5px) top left;
+    background-size: 20px 14px;
+    background-repeat: repeat-x;
+    background-color: var(--paper);
+  }
+
+  .hero-inner {
+    max-width: 840px;
+    margin: 0 auto;
+  }
+
+  .hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #C9BEA9;
+  }
+
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #7EA36D;
+    flex-shrink: 0;
+  }
+  .status-dot.error { background: var(--chili); }
+  .status-dot.loading { background: var(--gold); animation: pulse 1.4s ease-in-out infinite; }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  #refreshBtn {
+    background: transparent;
+    border: 1px solid #5A4E40;
+    color: var(--cream);
+    padding: 6px 12px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  #refreshBtn:hover { border-color: var(--gold); color: var(--gold); }
+  #refreshBtn:disabled { opacity: 0.5; cursor: default; }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(40px, 8vw, 64px);
+    line-height: 0.98;
+    margin: 28px 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: #C9BEA9;
+    max-width: 46ch;
+    margin: 0;
+  }
+
+  .hero-sub strong { color: var(--cream); font-weight: 600; }
+
+  /* ---------- Wrap ---------- */
+
+  .wrap {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 44px 24px 80px;
+  }
+
+  section + section { margin-top: 56px; }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+
+  .section-note {
+    font-size: 14px;
+    color: var(--ink-soft);
+    margin: 0 0 20px;
+  }
+
+  /* ---------- Balance cards ---------- */
+
+  .balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .balance-card {
+    background: var(--paper);
+    padding: 18px 16px;
+  }
+
+  .balance-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+
+  .balance-amt {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .balance-amt.owes { color: var(--chili); }
+  .balance-amt.owed { color: var(--basil); }
+  .balance-amt.even { color: var(--ink-soft); }
+
+  .balance-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 2px 0 12px;
+  }
+
+  .balance-bar-track {
+    height: 4px;
+    background: var(--paper-dim);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .balance-bar-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .balance-bar-fill.owes { background: var(--chili); }
+  .balance-bar-fill.owed { background: var(--basil); }
+
+  /* ---------- Stats strip ---------- */
+
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .stat {
+    padding: 18px 4px;
+    border-left: 1px solid var(--line);
+  }
+  .stat:first-child { border-left: none; }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .stat-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  /* ---------- Feed ---------- */
+
+  .feed-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  #search {
+    border: 1px solid var(--line);
+    background: var(--paper);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    width: 220px;
+    max-width: 100%;
+  }
+
+  #resultCount { font-size: 13px; color: var(--ink-soft); }
+
+  .feed-item {
+    border-top: 1px dashed var(--line);
+    padding: 14px 0;
+  }
+  .feed-item:last-child { border-bottom: 1px dashed var(--line); }
+
+  .feed-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .feed-date {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    width: 92px;
+    flex-shrink: 0;
+  }
+
+  .feed-name {
+    font-weight: 500;
+    font-size: 15px;
+  }
+
+  .feed-leader {
+    flex: 1;
+    border-bottom: 1px dotted var(--line);
+    margin: 0 6px;
+    min-width: 12px;
+    transform: translateY(-4px);
+  }
+
+  .feed-payer {
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .feed-toggle {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 6px 0 0 102px;
+  }
+  .feed-toggle:hover { color: var(--ink); }
+
+  .feed-detail {
+    display: none;
+    padding: 10px 0 0 102px;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  .feed-detail.open { display: flex; }
+
+  .feed-detail span {
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .feed-detail .neg { color: var(--basil); }
+  .feed-detail .pos { color: var(--chili); }
+
+  #loadMore {
+    display: block;
+    margin: 24px auto 0;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    padding: 10px 22px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #loadMore:hover { background: #40342A; }
+
+  .empty {
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 20px 0;
+  }
+
+  /* ---------- Loading / error ---------- */
+
+  .placeholder {
+    color: var(--ink-soft);
+    font-size: 14px;
+    padding: 20px 0;
+  }
+
+  .error-box {
+    background: var(--chili-soft);
+    border: 1px solid var(--chili);
+    border-radius: var(--radius);
+    padding: 18px;
+    font-size: 14px;
+  }
+  .error-box p { margin: 0 0 12px; }
+  .error-box button {
+    background: var(--chili);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+  }
+
+  /* ---------- Footer ---------- */
+
+  footer {
+    max-width: 840px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  footer a { text-decoration: underline; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  @media (max-width: 520px) {
+    .hero { padding: 40px 18px 60px; }
+    .wrap { padding: 36px 18px 60px; }
+    .feed-date { width: 74px; font-size: 11px; }
+    .feed-toggle, .feed-detail { padding-left: 84px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-top">
+      <div class="status">
+        <span class="status-dot loading" id="statusDot"></span>
+        <span id="statusText">Pulling the latest tab</span>
+      </div>
+      <button id="refreshBtn" disabled>Refresh</button>
+    </div>
+    <h1>Khaba Fund</h1>
+    <p class="hero-sub">The running dinner tab for eight friends in Riyadh. <strong id="sinceLine"></strong></p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section id="balanceSection">
+    <h2>Who owes what</h2>
+    <p class="section-note" id="balanceNote">Balances update as soon as the sheet does.</p>
+    <div class="balance-grid" id="balanceGrid">
+      <div class="placeholder">Loading balances…</div>
+    </div>
+    <div class="stats-strip" id="statsStrip"></div>
+  </section>
+
+  <section id="feedSection">
+    <div class="feed-head">
+      <div>
+        <h2>Every outing</h2>
+        <p class="section-note" style="margin-bottom:0">Tap a line to see the full split.</p>
+      </div>
+      <div>
+        <input type="text" id="search" placeholder="Search restaurants" aria-label="Search restaurants" disabled>
+        <div id="resultCount"></div>
+      </div>
+    </div>
+    <div id="feedList"><div class="placeholder">Loading the tab…</div></div>
+    <button id="loadMore" style="display:none">Show more</button>
+  </section>
+
+</div>
+
+<footer>
+  Balances pull live from the group's Google Sheet on every visit, nothing here is stored.
+  <a id="sheetLink" href="#" target="_blank" rel="noopener">View the source sheet</a>.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var SHEET_ID = "1QuhUY_MPCssG154RNbVUsQxs-ZHO32_nmShNGFVk50E";
+  var CANDIDATES = [
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv&gid=0",
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:csv",
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv&gid=0",
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/export?format=csv"
+  ];
+  var EXCLUDE = { "": 1, "date": 1, "day": 1, "particulars": 1, "blank": 1, "control": 1 };
+  var AUTO_REFRESH_MS = 5 * 60 * 1000;
+  var PAGE_SIZE = 25;
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  document.getElementById("sheetLink").href =
+    "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit?usp=sharing";
+
+  var state = { transactions: [], filtered: [], shown: 0, people: [] };
+
+  function parseAmt(v) {
+    if (v == null) return 0;
+    var s = String(v).trim();
+    if (s === "") return 0;
+    var neg = false;
+    if (s.charAt(0) === "(" && s.charAt(s.length - 1) === ")") {
+      neg = true;
+      s = s.slice(1, -1);
+    }
+    s = s.replace(/,/g, "").replace(/SAR/gi, "").trim();
+    var n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    return neg ? -n : n;
+  }
+
+  function parseDMY(s) {
+    var months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+    var parts = String(s).trim().split("-");
+    if (parts.length !== 3) return null;
+    var day = parseInt(parts[0], 10);
+    var mon = months[parts[1].slice(0, 3).toLowerCase()];
+    var year = parseInt(parts[2], 10);
+    if (isNaN(day) || mon === undefined || isNaN(year)) return null;
+    return new Date(year, mon, day);
+  }
+
+  function fmtMoney(n) {
+    var abs = Math.abs(n);
+    var rounded = Math.round(abs * 100) / 100;
+    var isInt = rounded === Math.round(rounded);
+    var opts = isInt ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+    return "SAR " + rounded.toLocaleString("en-US", opts);
+  }
+
+  function fmtDateShort(d) {
+    if (!d) return "";
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+
+  function relTime(ts) {
+    var s = Math.round((Date.now() - ts) / 1000);
+    if (s < 20) return "just now";
+    if (s < 60) return s + "s ago";
+    var m = Math.round(s / 60);
+    if (m < 60) return m + (m === 1 ? " minute ago" : " minutes ago");
+    var h = Math.round(m / 60);
+    return h + (h === 1 ? " hour ago" : " hours ago");
+  }
+
+  function setStatus(mode, text) {
+    var dot = document.getElementById("statusDot");
+    var label = document.getElementById("statusText");
+    dot.className = "status-dot" + (mode === "error" ? " error" : mode === "loading" ? " loading" : "");
+    label.textContent = text;
+  }
+
+  function fetchFirstWorking(urls) {
+    var i = 0;
+    function attempt() {
+      if (i >= urls.length) return Promise.reject(new Error("no source worked"));
+      var url = urls[i] + (urls[i].indexOf("?") > -1 ? "&" : "?") + "_=" + Date.now();
+      i++;
+      return fetch(url, { cache: "no-store" })
+        .then(function (r) {
+          if (!r.ok) throw new Error("bad status " + r.status);
+          return r.text();
+        })
+        .then(function (text) {
+          var parsed = parseSheet(text);
+          if (!parsed) throw new Error("could not find Particulars header");
+          return parsed;
+        })
+        .catch(function (err) {
+          return attempt();
+        });
+    }
+    return attempt();
+  }
+
+  function parseSheet(csvText) {
+    var rows = Papa.parse(csvText, { skipEmptyLines: false }).data;
+
+    var headerIdx = -1;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].some(function (c) { return String(c).trim().toLowerCase() === "particulars"; })) {
+        headerIdx = i;
+        break;
+      }
+    }
+    if (headerIdx === -1) return null;
+
+    var header = rows[headerIdx];
+    var dateCol = -1, dayCol = -1, particularsCol = -1;
+    var people = [];
+    header.forEach(function (c, idx) {
+      var v = String(c).trim().toLowerCase();
+      if (v === "date") dateCol = idx;
+      else if (v === "day") dayCol = idx;
+      else if (v === "particulars") particularsCol = idx;
+      else if (!EXCLUDE[v]) people.push({ name: String(c).trim(), idx: idx });
+    });
+    if (particularsCol === -1 || dateCol === -1 || people.length === 0) return null;
+
+    var balRowIdx = -1;
+    for (var j = headerIdx + 1; j < rows.length; j++) {
+      var p = String(rows[j][particularsCol] || "").toLowerCase();
+      if (p.indexOf("receivable") > -1) { balRowIdx = j; break; }
+    }
+    if (balRowIdx === -1) return null;
+
+    var balances = {};
+    people.forEach(function (p) { balances[p.name] = parseAmt(rows[balRowIdx][p.idx]); });
+    var asOfDate = parseDMY(rows[balRowIdx][dateCol]);
+
+    var sinceDate = null;
+    for (var k = headerIdx + 1; k < rows.length; k++) {
+      var pk = String(rows[k][particularsCol] || "").toLowerCase();
+      if (pk.indexOf("opening balance") > -1) { sinceDate = parseDMY(rows[k][dateCol]); break; }
+    }
+
+    var transactions = [];
+    for (var m = balRowIdx + 1; m < rows.length; m++) {
+      var row = rows[m];
+      if (!row || row.length < 2) continue;
+      var dateStr = String(row[dateCol] || "").trim();
+      var particulars = String(row[particularsCol] || "").trim();
+      if (!dateStr || !particulars) continue;
+      var d = parseDMY(dateStr);
+      if (!d) continue;
+      var entries = {};
+      people.forEach(function (p) {
+        var v = parseAmt(row[p.idx]);
+        if (v !== 0) entries[p.name] = v;
+      });
+      transactions.push({
+        date: d,
+        day: dayCol > -1 ? String(row[dayCol] || "").trim() : "",
+        particulars: particulars,
+        entries: entries
+      });
+    }
+
+    return { people: people.map(function (p) { return p.name; }), balances: balances, asOfDate: asOfDate, sinceDate: sinceDate, transactions: transactions };
+  }
+
+  function renderBalances(data) {
+    var grid = document.getElementById("balanceGrid");
+    var names = Object.keys(data.balances);
+    var maxAbs = Math.max.apply(null, names.map(function (n) { return Math.abs(data.balances[n]); }).concat([1]));
+
+    var order = names.slice().sort(function (a, b) {
+      return Math.abs(data.balances[b]) - Math.abs(data.balances[a]);
+    });
+
+    grid.innerHTML = "";
+    order.forEach(function (name) {
+      var amt = data.balances[name];
+      var cls = amt > 0.5 ? "owes" : amt < -0.5 ? "owed" : "even";
+      var label = amt > 0.5 ? "owes the tab" : amt < -0.5 ? "is owed" : "settled up";
+
+      var card = document.createElement("div");
+      card.className = "balance-card";
+      card.innerHTML =
+        '<p class="balance-name">' + escapeHtml(name) + '</p>' +
+        '<p class="balance-amt tabular ' + cls + '">' + fmtMoney(amt) + '</p>' +
+        '<p class="balance-label">' + label + '</p>' +
+        '<div class="balance-bar-track"><div class="balance-bar-fill ' + (cls === "even" ? "" : cls) + '" data-width="' + (Math.abs(amt) / maxAbs * 100) + '"></div></div>';
+      grid.appendChild(card);
+    });
+
+    requestAnimationFrame(function () {
+      document.querySelectorAll(".balance-bar-fill").forEach(function (el) {
+        el.style.width = reduceMotion ? el.dataset.width + "%" : "0%";
+      });
+      requestAnimationFrame(function () {
+        document.querySelectorAll(".balance-bar-fill").forEach(function (el) {
+          el.style.width = el.dataset.width + "%";
+        });
+      });
+    });
+
+    var noteBits = [];
+    if (data.asOfDate) noteBits.push("Sheet last marked " + fmtDateShort(data.asOfDate));
+    document.getElementById("balanceNote").textContent = noteBits.join(" · ") || "Balances update as soon as the sheet does.";
+
+    if (data.sinceDate) {
+      document.getElementById("sinceLine").textContent = "Running since " + data.sinceDate.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) + ".";
+    }
+  }
+
+  function renderStats(data) {
+    var strip = document.getElementById("statsStrip");
+    var count = data.transactions.length;
+    var moneyInMotion = 0;
+    data.transactions.forEach(function (t) {
+      var negSum = 0;
+      Object.keys(t.entries).forEach(function (k) { if (t.entries[k] < 0) negSum += t.entries[k]; });
+      moneyInMotion += Math.abs(negSum);
+    });
+    var sorted = data.transactions.slice().sort(function (a, b) { return b.date - a.date; });
+    var latest = sorted[0];
+
+    var stats = [
+      { value: count.toLocaleString("en-US"), label: "outings logged" },
+      { value: fmtMoney(moneyInMotion), label: "fronted by the group" },
+      { value: latest ? latest.particulars : "—", label: latest ? "latest outing, " + fmtDateShort(latest.date) : "latest outing" }
+    ];
+
+    strip.innerHTML = stats.map(function (s) {
+      return '<div class="stat"><div class="stat-value tabular">' + escapeHtml(String(s.value)) + '</div><div class="stat-label">' + escapeHtml(s.label) + '</div></div>';
+    }).join("");
+  }
+
+  function renderFeed(reset) {
+    var list = document.getElementById("feedList");
+    var loadMore = document.getElementById("loadMore");
+    if (reset) {
+      list.innerHTML = "";
+      state.shown = 0;
+    }
+    if (state.filtered.length === 0) {
+      list.innerHTML = '<div class="empty">No outings match that search.</div>';
+      loadMore.style.display = "none";
+      document.getElementById("resultCount").textContent = "";
+      return;
+    }
+
+    var next = state.filtered.slice(state.shown, state.shown + PAGE_SIZE);
+    next.forEach(function (t) {
+      list.appendChild(buildFeedItem(t));
+    });
+    state.shown += next.length;
+
+    loadMore.style.display = state.shown < state.filtered.length ? "block" : "none";
+    document.getElementById("resultCount").textContent = state.filtered.length + (state.filtered.length === 1 ? " outing" : " outings");
+  }
+
+  function buildFeedItem(t) {
+    var payers = Object.keys(t.entries).filter(function (k) { return t.entries[k] < 0; });
+    var payerText = payers.length ? "Fronted by " + payers.join(" and ") : "";
+
+    var item = document.createElement("div");
+    item.className = "feed-item";
+
+    var row = document.createElement("div");
+    row.className = "feed-row";
+    row.innerHTML =
+      '<span class="feed-date tabular">' + fmtDateShort(t.date) + (t.day ? ", " + escapeHtml(t.day) : "") + '</span>' +
+      '<span class="feed-name">' + escapeHtml(t.particulars) + '</span>' +
+      '<span class="feed-leader"></span>' +
+      '<span class="feed-payer">' + escapeHtml(payerText) + '</span>';
+    item.appendChild(row);
+
+    var toggle = document.createElement("button");
+    toggle.className = "feed-toggle";
+    toggle.type = "button";
+    toggle.textContent = "See the full split";
+    item.appendChild(toggle);
+
+    var detail = document.createElement("div");
+    detail.className = "feed-detail";
+    var names = Object.keys(t.entries).sort(function (a, b) { return t.entries[a] - t.entries[b]; });
+    detail.innerHTML = names.map(function (n) {
+      var v = t.entries[n];
+      var cls = v < 0 ? "neg" : "pos";
+      var text = v < 0 ? n + " is owed " + fmtMoney(v) : n + " owes " + fmtMoney(v);
+      return '<span class="' + cls + '">' + escapeHtml(text) + '</span>';
+    }).join("");
+    item.appendChild(detail);
+
+    toggle.addEventListener("click", function () {
+      var open = detail.classList.toggle("open");
+      toggle.textContent = open ? "Hide the split" : "See the full split";
+    });
+
+    return item;
+  }
+
+  function applySearch() {
+    var q = document.getElementById("search").value.trim().toLowerCase();
+    var all = state.transactions.slice().sort(function (a, b) { return b.date - a.date; });
+    state.filtered = q ? all.filter(function (t) { return t.particulars.toLowerCase().indexOf(q) > -1; }) : all;
+    renderFeed(true);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function showError(msg) {
+    setStatus("error", "Could not load");
+    document.getElementById("balanceGrid").innerHTML =
+      '<div class="error-box" style="grid-column:1/-1">' +
+      '<p>The tab did not load. Make sure the sheet is still shared with anyone who has the link, then try again.</p>' +
+      '<button id="retryBtn">Try again</button>' +
+      '</div>';
+    document.getElementById("statsStrip").innerHTML = "";
+    document.getElementById("feedList").innerHTML = "";
+    document.getElementById("retryBtn").addEventListener("click", load);
+    document.getElementById("refreshBtn").disabled = false;
+  }
+
+  function load() {
+    setStatus("loading", "Pulling the latest tab");
+    document.getElementById("refreshBtn").disabled = true;
+    document.getElementById("search").disabled = true;
+
+    fetchFirstWorking(CANDIDATES).then(function (data) {
+      state.transactions = data.transactions;
+      state.people = data.people;
+      renderBalances(data);
+      renderStats(data);
+      applySearch();
+      var now = Date.now();
+      setStatus("ok", "Updated " + relTime(now));
+      document.getElementById("refreshBtn").disabled = false;
+      document.getElementById("search").disabled = false;
+      clearInterval(window.__khabaTick);
+      window.__khabaTick = setInterval(function () {
+        setStatus("ok", "Updated " + relTime(now));
+      }, 15000);
+    }).catch(function () {
+      showError();
+    });
+  }
+
+  document.getElementById("refreshBtn").addEventListener("click", load);
+  document.getElementById("search").addEventListener("input", applySearch);
+  document.getElementById("loadMore").addEventListener("click", function () { renderFeed(false); });
+
+  load();
+  setInterval(load, AUTO_REFRESH_MS);
+})();
+</script>
+</body>
+</html>
