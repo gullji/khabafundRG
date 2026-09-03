@@ -17,6 +17,7 @@
     --line: #DDD3BC;
     --chili: #B8402A;
     --chili-soft: #F4E1DB;
+    --maroon: #5C1A21;
     --basil: #4C6444;
     --basil-soft: #E4EADF;
     --gold: #D6A32B;
@@ -269,15 +270,18 @@
   }
 
   .payer-callout-label {
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin: 0 0 6px;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 24px;
+    color: var(--ink);
+    margin: 0 0 4px;
   }
 
   .payer-callout-names {
     font-family: var(--serif);
     font-weight: 600;
     font-size: 22px;
+    color: var(--maroon);
     margin: 0;
   }
 
@@ -715,7 +719,7 @@
     var maxAbs = Math.max.apply(null, names.map(function (n) { return Math.abs(data.balances[n]); }).concat([1]));
 
     var order = names.slice().sort(function (a, b) {
-      return Math.abs(data.balances[b]) - Math.abs(data.balances[a]);
+      return data.balances[b] - data.balances[a];
     });
 
     grid.innerHTML = "";
