@@ -39,6 +39,7 @@
     font-family: var(--sans);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   a { color: inherit; }
@@ -218,19 +219,21 @@
 
   .balance-card {
     background: var(--paper);
-    padding: 18px 16px;
+    padding: 13px 16px;
   }
 
   .balance-name {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
-    margin: 0 0 10px;
+    line-height: 1.25;
+    margin: 0 0 4px;
   }
 
   .balance-amt {
     font-family: var(--mono);
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 600;
+    line-height: 1.25;
     margin: 0;
   }
 
@@ -239,9 +242,9 @@
   .balance-amt.even { color: var(--ink-soft); }
 
   .balance-label {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ink-soft);
-    margin: 2px 0 12px;
+    margin: 2px 0 8px;
   }
 
   .balance-bar-track {
@@ -363,6 +366,15 @@
     color: inherit;
   }
 
+  .feed-month-main {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    flex: 1;
+    min-width: 0;
+  }
+
   .feed-month-label {
     font-family: var(--serif);
     font-weight: 600;
@@ -371,10 +383,22 @@
   }
   .feed-month:hover .feed-month-label { color: var(--chili); }
 
+  .feed-month-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .feed-month-total {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--ink);
+  }
+
   .feed-month-count {
     font-size: 12px;
     color: var(--ink-soft);
-    margin-left: auto;
   }
 
   .feed-month-chevron {
@@ -510,10 +534,13 @@
   @media (max-width: 520px) {
     .hero { padding: 40px 18px 60px; }
     .wrap { padding: 36px 18px 60px; }
+    .balance-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     .feed-date { width: 74px; font-size: 11px; }
     .feed-toggle, .feed-detail { padding-left: 84px; }
     .btn-3d { padding: 9px 16px; font-size: 12px; }
     .hero-actions { gap: 10px; }
+    #search { width: 100%; }
+    .feed-head > div:last-child { width: 100%; }
   }
 </style>
 </head>
@@ -643,6 +670,23 @@
 
   function monthLabel(d) {
     return d.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  }
+
+  // Reconstructs the actual bill for an outing (not just what the payer fronted).
+  // Shares are split evenly across everyone at the table, so the per-person share
+  // times the number of people who were there gives the real total cost.
+  function transactionTotal(t) {
+    var positives = [];
+    var participantCount = 0;
+    Object.keys(t.entries).forEach(function (k) {
+      var v = t.entries[k];
+      if (v === 0) return;
+      participantCount++;
+      if (v > 0) positives.push(v);
+    });
+    if (participantCount === 0 || positives.length === 0) return 0;
+    var avgShare = positives.reduce(function (a, b) { return a + b; }, 0) / positives.length;
+    return avgShare * participantCount;
   }
 
   function relTime(ts) {
@@ -858,10 +902,11 @@
     state.filtered.forEach(function (t) {
       var key = monthKey(t.date);
       if (!byKey[key]) {
-        byKey[key] = { key: key, label: monthLabel(t.date), items: [] };
+        byKey[key] = { key: key, label: monthLabel(t.date), items: [], total: 0 };
         groups.push(byKey[key]);
       }
       byKey[key].items.push(t);
+      byKey[key].total += transactionTotal(t);
     });
 
     groups.forEach(function (g) {
@@ -875,8 +920,13 @@
       header.className = "feed-month" + (isOpen ? " expanded" : "");
       header.setAttribute("aria-expanded", isOpen ? "true" : "false");
       header.innerHTML =
-        '<span class="feed-month-label">' + escapeHtml(g.label) + '</span>' +
-        '<span class="feed-month-count">' + g.items.length + (g.items.length === 1 ? " outing" : " outings") + '</span>' +
+        '<span class="feed-month-main">' +
+          '<span class="feed-month-label">' + escapeHtml(g.label) + '</span>' +
+          '<span class="feed-month-meta">' +
+            '<span class="feed-month-total tabular">' + fmtMoney(g.total) + '</span>' +
+            '<span class="feed-month-count">' + g.items.length + (g.items.length === 1 ? " outing" : " outings") + '</span>' +
+          '</span>' +
+        '</span>' +
         '<span class="feed-month-chevron" aria-hidden="true"></span>';
 
       var body = document.createElement("div");
