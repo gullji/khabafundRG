@@ -871,18 +871,16 @@
   function renderStats(data) {
     var strip = document.getElementById("statsStrip");
     var count = data.transactions.length;
-    var moneyInMotion = 0;
+    var totalSpent = 0;
     data.transactions.forEach(function (t) {
-      var negSum = 0;
-      Object.keys(t.entries).forEach(function (k) { if (t.entries[k] < 0) negSum += t.entries[k]; });
-      moneyInMotion += Math.abs(negSum);
+      totalSpent += transactionTotal(t);
     });
     var sorted = data.transactions.slice().sort(function (a, b) { return b.date - a.date; });
     var latest = sorted[0];
 
     var stats = [
       { value: count.toLocaleString("en-US"), label: "outings logged" },
-      { value: fmtMoney(moneyInMotion), label: "fronted by the group" },
+      { value: fmtMoney(totalSpent), label: "spent by the group" },
       { value: latest ? latest.particulars : "—", label: latest ? "latest outing, " + fmtDateShort(latest.date) : "latest outing" }
     ];
 
