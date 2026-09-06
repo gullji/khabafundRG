@@ -262,6 +262,13 @@
   .balance-bar-fill.owes { background: var(--chili); }
   .balance-bar-fill.owed { background: var(--basil); }
 
+  .balance-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-soft);
+    margin: 8px 0 0;
+  }
+
   /* ---------- Who should pay ---------- */
 
   .payer-callout {
@@ -801,10 +808,38 @@
     return { people: people.map(function (p) { return p.name; }), balances: balances, asOfDate: asOfDate, sinceDate: sinceDate, transactions: transactions };
   }
 
+  // Per person: how much they've fronted (the full bill, paid out of pocket) versus
+  // their own reconstructed share of every outing they attended.
+  function computePersonTotals(data) {
+    var fronted = {};
+    var expense = {};
+    data.people.forEach(function (name) { fronted[name] = 0; expense[name] = 0; });
+
+    data.transactions.forEach(function (t) {
+      var positives = [];
+      var participants = [];
+      var payer = null;
+      Object.keys(t.entries).forEach(function (k) {
+        var v = t.entries[k];
+        if (v === 0) return;
+        participants.push(k);
+        if (v < 0) payer = k;
+        else positives.push(v);
+      });
+      var avgShare = positives.length ? positives.reduce(function (a, b) { return a + b; }, 0) / positives.length : 0;
+      var billTotal = avgShare * participants.length;
+      if (payer) fronted[payer] = (fronted[payer] || 0) + billTotal;
+      participants.forEach(function (k) { expense[k] = (expense[k] || 0) + avgShare; });
+    });
+
+    return { fronted: fronted, expense: expense };
+  }
+
   function renderBalances(data) {
     var grid = document.getElementById("balanceGrid");
     var names = Object.keys(data.balances);
     var maxAbs = Math.max.apply(null, names.map(function (n) { return Math.abs(data.balances[n]); }).concat([1]));
+    var personTotals = computePersonTotals(data);
 
     var order = names.slice().sort(function (a, b) {
       return data.balances[b] - data.balances[a];
@@ -815,6 +850,8 @@
       var amt = data.balances[name];
       var cls = amt > 0.5 ? "owes" : amt < -0.5 ? "owed" : "even";
       var label = amt > 0.5 ? "owes the tab" : amt < -0.5 ? "is owed" : "settled up";
+      var net = (personTotals.fronted[name] || 0) - (personTotals.expense[name] || 0);
+      var netText = (net < 0 ? "-" : "") + fmtMoney(Math.abs(net));
 
       var card = document.createElement("div");
       card.className = "balance-card";
@@ -822,7 +859,8 @@
         '<p class="balance-name">' + escapeHtml(name) + '</p>' +
         '<p class="balance-amt tabular ' + cls + '">' + fmtMoney(amt) + '</p>' +
         '<p class="balance-label">' + label + '</p>' +
-        '<div class="balance-bar-track"><div class="balance-bar-fill ' + (cls === "even" ? "" : cls) + '" data-width="' + (Math.abs(amt) / maxAbs * 100) + '"></div></div>';
+        '<div class="balance-bar-track"><div class="balance-bar-fill ' + (cls === "even" ? "" : cls) + '" data-width="' + (Math.abs(amt) / maxAbs * 100) + '"></div></div>' +
+        '<p class="balance-sub tabular">Fronted less expense: ' + netText + '</p>';
       grid.appendChild(card);
     });
 
