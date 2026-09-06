@@ -672,6 +672,10 @@
     return "SAR " + rounded.toLocaleString("en-US", opts);
   }
 
+  function fmtK(n) {
+    return (Math.abs(n) / 1000).toFixed(1) + " K";
+  }
+
   function fmtDateShort(d) {
     if (!d) return "";
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
@@ -850,8 +854,7 @@
       var amt = data.balances[name];
       var cls = amt > 0.5 ? "owes" : amt < -0.5 ? "owed" : "even";
       var label = amt > 0.5 ? "owes the tab" : amt < -0.5 ? "is owed" : "settled up";
-      var net = (personTotals.fronted[name] || 0) - (personTotals.expense[name] || 0);
-      var netText = (net < 0 ? "-" : "") + fmtMoney(Math.abs(net));
+      var subText = "Fronted " + fmtK(personTotals.fronted[name] || 0) + " less expense " + fmtK(personTotals.expense[name] || 0);
 
       var card = document.createElement("div");
       card.className = "balance-card";
@@ -860,7 +863,7 @@
         '<p class="balance-amt tabular ' + cls + '">' + fmtMoney(amt) + '</p>' +
         '<p class="balance-label">' + label + '</p>' +
         '<div class="balance-bar-track"><div class="balance-bar-fill ' + (cls === "even" ? "" : cls) + '" data-width="' + (Math.abs(amt) / maxAbs * 100) + '"></div></div>' +
-        '<p class="balance-sub tabular">Fronted less expense: ' + netText + '</p>';
+        '<p class="balance-sub tabular">' + escapeHtml(subText) + '</p>';
       grid.appendChild(card);
     });
 
